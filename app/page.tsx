@@ -106,7 +106,7 @@ const BONUS_QUESTIONS: BonusQuestion[] = [
     id: "mean",
     title: "평균",
     question: "자료의 값을 모두 더한 뒤 자료의 (    )로 나누어 구하는 값을 평균이라고 한다. 빈칸에 들어갈 두 글자는?",
-    answers: ["개수"],
+    answers: ["개수", "갯수"],
     answerLabel: "개수",
     concept: "평균은 자료의 값의 합을 자료의 개수로 나눈 값입니다.",
     future: "2학기 통계에 필요한 기억",
@@ -119,6 +119,7 @@ const BONUS_QUESTIONS: BonusQuestion[] = [
     answerLabel: "닮음",
     concept: "대응하는 각의 크기가 같고 대응하는 변의 길이의 비가 일정한 관계입니다.",
     future: "2학기 삼각비에 필요한 기억",
+    initials: "ㄷㅇ ㄷㅎ",
   },
   {
     id: "trig-ratio",
