@@ -18,6 +18,8 @@ type ResultPayload = {
   usedHints?: Record<string, number[]>;
   bonusScore?: number;
   bonusRecords?: Record<string, { attempts?: number; correct?: boolean }>;
+  hiddenBonusRecords?: Record<string, { attempts?: number; correct?: boolean }>;
+  discoveredHiddenBonuses?: string[];
   finalScore?: number;
   rank?: string;
   reflection?: string;
@@ -229,6 +231,15 @@ export async function POST(request: Request) {
     const bonusIds = ["chord", "tangent", "right-angle", "mean", "similarity", "trig-ratio"];
     const bonusCorrectCount = bonusIds.filter((id) => payload.bonusRecords?.[id]?.correct === true).length;
     const bonusScore = bonusCorrectCount * 30 + (bonusCorrectCount === bonusIds.length ? 20 : 0);
+    const storedBonusRecords: Record<string, { attempts?: number; correct?: boolean }> = {
+      ...(payload.bonusRecords ?? {}),
+    };
+    Object.entries(payload.hiddenBonusRecords ?? {}).forEach(([id, record]) => {
+      storedBonusRecords[`hidden:${id}`] = record;
+    });
+    (payload.discoveredHiddenBonuses ?? []).forEach((id) => {
+      storedBonusRecords[`hidden-discovered:${id}`] = { attempts: 1, correct: true };
+    });
     const escapeScore = Math.max(0, 1000 - timeCost - wrongCost - hintCost);
     const finalScore = escapeScore + bonusScore;
     const rank = finalScore >= 1050 ? "S — 전설의 탈출가"
@@ -256,7 +267,7 @@ export async function POST(request: Request) {
       hintCost,
       usedHints: payload.usedHints ?? {},
       bonusScore,
-      bonusRecords: payload.bonusRecords ?? {},
+      bonusRecords: storedBonusRecords,
       finalScore,
       rank,
       reflection,

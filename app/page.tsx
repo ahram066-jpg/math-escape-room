@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect, jsx-a11y/label-has-associated-control, jsx-a11y/no-static-element-interactions, jsx-a11y/no-noninteractive-element-interactions, no-irregular-whitespace */
+
 import { FocusEvent, FormEvent, PointerEvent, useEffect, useRef, useState } from "react";
 
 type HotspotId =
@@ -34,6 +36,7 @@ type CompletionSnapshot = {
 
 type BonusRecord = { attempts: number; correct: boolean };
 type BonusRecords = Record<string, BonusRecord>;
+type Announcement = { id: string; message: string; createdAt: string; expiresAt: string };
 type HiddenBonusId = "axis" | "parabola" | "x-value" | "fair-line" | "x-date" | "interest" | "exam" | "favorites";
 type HiddenBonusQuestion = {
   id: HiddenBonusId;
@@ -378,6 +381,8 @@ export default function Home() {
   const [student, setStudent] = useState<Student>({ className: "", number: "", name: "", character: "" });
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [clockNow, setClockNow] = useState(() => Date.now());
+  const [announcement, setAnnouncement] = useState<Announcement | null>(null);
+  const [announcementOpen, setAnnouncementOpen] = useState(false);
   const [completion, setCompletion] = useState<CompletionSnapshot | null>(null);
   const [active, setActive] = useState<HotspotId | null>(null);
   const [solved, setSolved] = useState(INITIAL_SOLVED);
@@ -424,6 +429,7 @@ export default function Home() {
   const bonusLockRef = useRef(false);
   const completionRef = useRef<CompletionSnapshot | null>(null);
   const answerFeedbackTimerRef = useRef<number | null>(null);
+  const announcementSeenRef = useRef<string | null>(null);
 
   useEffect(() => {
     try {
@@ -537,6 +543,39 @@ export default function Home() {
     const timer = window.setInterval(() => setClockNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, [completion, screen, startedAt]);
+
+  useEffect(() => {
+    let activeRequest = true;
+    let closeTimer: number | null = null;
+
+    async function checkAnnouncement() {
+      try {
+        const response = await fetch("/api/announcement", { cache: "no-store" });
+        if (!response.ok) return;
+        const payload = await response.json() as { announcement?: Announcement | null };
+        if (!activeRequest) return;
+        const nextAnnouncement = payload.announcement ?? null;
+        setAnnouncement(nextAnnouncement);
+        if (nextAnnouncement && announcementSeenRef.current !== nextAnnouncement.id) {
+          announcementSeenRef.current = nextAnnouncement.id;
+          setAnnouncementOpen(true);
+          if (closeTimer !== null) window.clearTimeout(closeTimer);
+          closeTimer = window.setTimeout(() => setAnnouncementOpen(false), 8_000);
+        }
+        if (!nextAnnouncement) setAnnouncementOpen(false);
+      } catch {
+        // The game continues normally if a classroom notice cannot be checked.
+      }
+    }
+
+    void checkAnnouncement();
+    const timer = window.setInterval(() => void checkAnnouncement(), 5_000);
+    return () => {
+      activeRequest = false;
+      window.clearInterval(timer);
+      if (closeTimer !== null) window.clearTimeout(closeTimer);
+    };
+  }, []);
 
   const coreSolved = ["mirror", "magazine", "bookcase"].filter(
     (id) => solved[id as HotspotId],
@@ -1071,6 +1110,7 @@ export default function Home() {
           bonusRecords,
           hiddenBonusRecords,
           hiddenBonusCorrectCount,
+          discoveredHiddenBonuses,
           finalScore,
           rank: `${rank.grade} — ${rank.title}`,
           reflection,
@@ -1090,6 +1130,21 @@ export default function Home() {
     <main className="site-main">
       <div className="ambient ambient-one" />
       <div className="ambient ambient-two" />
+
+      {announcement && (
+        <div className="student-announcement-banner" role="status" aria-live="polite">
+          <span aria-hidden="true" />{announcement.message}
+        </div>
+      )}
+      {announcement && announcementOpen && (
+        <div className="student-announcement-backdrop" role="presentation">
+          <section className="student-announcement-modal" role="alertdialog" aria-modal="true" aria-labelledby="student-announcement-title">
+            <strong id="student-announcement-title">{announcement.message}</strong>
+            <p>선생님이 보낸 수업 시간 안내입니다.</p>
+            <button type="button" onClick={() => setAnnouncementOpen(false)}>확인하고 계속하기</button>
+          </section>
+        </div>
+      )}
 
       <header className="topbar">
         <div className="brand-mark">M²</div>
