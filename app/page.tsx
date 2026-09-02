@@ -430,6 +430,7 @@ export default function Home() {
   const completionRef = useRef<CompletionSnapshot | null>(null);
   const answerFeedbackTimerRef = useRef<number | null>(null);
   const announcementSeenRef = useRef<string | null>(null);
+  const teacherGestureRef = useRef({ count: 0, startedAt: 0 });
 
   useEffect(() => {
     try {
@@ -625,6 +626,22 @@ export default function Home() {
     setClockNow(start);
     setRunId(window.crypto.randomUUID());
     setScreen("playing");
+  }
+
+  function openHiddenTeacherPage() {
+    const now = Date.now();
+    const gesture = teacherGestureRef.current;
+    if (!gesture.startedAt || now - gesture.startedAt > 3_500) {
+      teacherGestureRef.current = { count: 1, startedAt: now };
+      return;
+    }
+
+    const nextCount = gesture.count + 1;
+    teacherGestureRef.current = { count: nextCount, startedAt: gesture.startedAt };
+    if (nextCount >= 5) {
+      teacherGestureRef.current = { count: 0, startedAt: 0 };
+      window.location.assign("/teacher");
+    }
   }
 
   function requestHint(level: HintLevel) {
@@ -1147,7 +1164,7 @@ export default function Home() {
       )}
 
       <header className="topbar">
-        <div className="brand-mark">M²</div>
+        <button className="brand-mark" type="button" onClick={openHiddenTeacherPage} aria-label="M 제곱">M²</button>
         <div className="brand-copy">
           <strong>수학초미녀의 비밀 연구실</strong>
           <span>QUADRATIC ESCAPE LAB</span>

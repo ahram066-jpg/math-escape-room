@@ -24,7 +24,7 @@ button { color: inherit; }
 .ambient-two { right: -17rem; bottom: -10rem; background: var(--cyan); }
 
 .topbar { height: 76px; padding: 0 clamp(20px, 4vw, 64px); display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--line); background: rgba(9, 7, 14, .78); backdrop-filter: blur(18px); position: relative; z-index: 20; }
-.brand-mark { width: 42px; height: 42px; border: 1px solid rgba(222,184,95,.5); display: grid; place-items: center; color: var(--gold); font-family: var(--font-geist-mono); font-weight: 800; transform: rotate(-4deg); background: rgba(222,184,95,.06); }
+.brand-mark { width: 42px; height: 42px; border: 1px solid rgba(222,184,95,.5); display: grid; place-items: center; padding: 0; color: var(--gold); font-family: var(--font-geist-mono); font-weight: 800; transform: rotate(-4deg); background: rgba(222,184,95,.06); cursor: default; appearance: none; }
 .brand-copy { display: flex; flex-direction: column; line-height: 1.1; }
 .brand-copy strong { font-size: 15px; letter-spacing: -.02em; }
 .brand-copy span, .chapter { margin-top: 5px; color: var(--muted); font: 600 11px/1 var(--font-geist-mono); letter-spacing: .16em; }
