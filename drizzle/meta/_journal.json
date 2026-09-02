@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1787894148455,
+      "tag": "0000_lumpy_mother_askani",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1787896827073,
+      "tag": "0001_happy_wendell_vaughn",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1787968423767,
+      "tag": "0002_familiar_dreadnoughts",
+      "breakpoints": true
+    }
+  ]
+}
