@@ -34,6 +34,18 @@ type CompletionSnapshot = {
 
 type BonusRecord = { attempts: number; correct: boolean };
 type BonusRecords = Record<string, BonusRecord>;
+type HiddenBonusId = "axis" | "parabola" | "x-value" | "fair-line" | "x-date" | "interest" | "exam" | "favorites";
+type HiddenBonusQuestion = {
+  id: HiddenBonusId;
+  question: string;
+  answerLabel: string;
+  initials?: string;
+  successMessage?: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
 type BonusQuestion = {
   id: string;
   title: string;
@@ -130,6 +142,83 @@ const BONUS_QUESTIONS: BonusQuestion[] = [
     concept: "삼각비는 직각삼각형에서 각과 두 변의 길이의 비 사이의 관계입니다.",
     future: "2학기에 새롭게 만날 개념",
     initials: "ㅅㄱㅂ",
+  },
+];
+
+const HIDDEN_BONUS_QUESTIONS: HiddenBonusQuestion[] = [
+  {
+    id: "axis",
+    question: "꼭짓점이 (3, -2)인 포물선의 대칭축은?",
+    answerLabel: "x=3",
+    x: 12,
+    y: 22,
+    width: 7,
+    height: 10,
+  },
+  {
+    id: "parabola",
+    question: "이차함수 그래프의 이름은?",
+    answerLabel: "포물선",
+    initials: "ㅍㅁㅅ",
+    x: 31,
+    y: 32,
+    width: 8,
+    height: 10,
+  },
+  {
+    id: "x-value",
+    question: "포물선이 x축을 만났다. 그 순간 y의 값은?",
+    answerLabel: "0",
+    x: 76,
+    y: 48,
+    width: 8,
+    height: 12,
+  },
+  {
+    id: "fair-line",
+    question: "포물선에서 양쪽을 항상 똑같이 대하는 세상에서 가장 공평한 선은?",
+    answerLabel: "대칭축",
+    x: 95,
+    y: 61,
+    width: 7,
+    height: 14,
+  },
+  {
+    id: "x-date",
+    question: "포물선이 x축과 소개팅을 했다. 둘이 실제로 만난 장소를 수학에서는 뭐라고 할까?",
+    answerLabel: "x절편",
+    successMessage: "💘 만남 성사!",
+    x: 56,
+    y: 72,
+    width: 9,
+    height: 10,
+  },
+  {
+    id: "interest",
+    question: "수학초미녀의 요즘 관심사는?",
+    answerLabel: "바이브 코딩, 웹페이지, 3학년 12반 중 하나",
+    x: 42,
+    y: 13,
+    width: 8,
+    height: 8,
+  },
+  {
+    id: "exam",
+    question: "대전삼천중학교 3학년 2학기 기말고사는 11월 0일부터 0일까지이다. 두 날짜를 맞혀보세요!",
+    answerLabel: "9일부터 11일까지",
+    x: 82,
+    y: 84,
+    width: 9,
+    height: 9,
+  },
+  {
+    id: "favorites",
+    question: "수학초미녀가 좋아하는 것은?",
+    answerLabel: "수학, AI, GPT, 우리반 중 하나",
+    x: 22,
+    y: 82,
+    width: 9,
+    height: 9,
   },
 ];
 
@@ -310,6 +399,7 @@ export default function Home() {
   const [shownHintLevel, setShownHintLevel] = useState<HintLevel | null>(null);
   const [pendingHint, setPendingHint] = useState<{ problem: HintProblemId; level: HintLevel; cost: number } | null>(null);
   const [resetPending, setResetPending] = useState(false);
+  const [escapeConfirmPending, setEscapeConfirmPending] = useState(false);
   const [progressLoaded, setProgressLoaded] = useState(false);
   const [scoreFlash, setScoreFlash] = useState(false);
   const [scoreDelta, setScoreDelta] = useState(0);
@@ -319,6 +409,11 @@ export default function Home() {
   const [bonusAnswer, setBonusAnswer] = useState("");
   const [bonusFeedback, setBonusFeedback] = useState<"idle" | "correct" | "wrong" | "failed">("idle");
   const [bonusBurst, setBonusBurst] = useState(0);
+  const [hiddenBonusActive, setHiddenBonusActive] = useState<HiddenBonusId | null>(null);
+  const [hiddenBonusAnswer, setHiddenBonusAnswer] = useState("");
+  const [hiddenBonusFeedback, setHiddenBonusFeedback] = useState<"idle" | "correct" | "wrong">("idle");
+  const [hiddenBonusRecords, setHiddenBonusRecords] = useState<BonusRecords>({});
+  const [discoveredHiddenBonuses, setDiscoveredHiddenBonuses] = useState<HiddenBonusId[]>([]);
   const [answerFeedback, setAnswerFeedback] = useState<"correct" | "wrong" | null>(null);
   const [cheerOrder, setCheerOrder] = useState<CheerFragmentId[]>([]);
   const [cheerAssemblyOpen, setCheerAssemblyOpen] = useState(false);
@@ -354,6 +449,8 @@ export default function Home() {
           bonusRecords?: BonusRecords;
           bonusOpen?: boolean;
           bonusIndex?: number;
+          hiddenBonusRecords?: BonusRecords;
+          discoveredHiddenBonuses?: HiddenBonusId[];
           cheerOrder?: CheerFragmentId[];
           messageRestored?: boolean;
         };
@@ -379,6 +476,10 @@ export default function Home() {
         if (progress.bonusRecords && typeof progress.bonusRecords === "object") setBonusRecords(progress.bonusRecords);
         if (typeof progress.bonusOpen === "boolean") setBonusOpen(progress.bonusOpen);
         if (typeof progress.bonusIndex === "number") setBonusIndex(Math.max(0, Math.min(BONUS_QUESTIONS.length - 1, progress.bonusIndex)));
+        if (progress.hiddenBonusRecords && typeof progress.hiddenBonusRecords === "object") setHiddenBonusRecords(progress.hiddenBonusRecords);
+        if (Array.isArray(progress.discoveredHiddenBonuses)) {
+          setDiscoveredHiddenBonuses(progress.discoveredHiddenBonuses.filter((id): id is HiddenBonusId => HIDDEN_BONUS_QUESTIONS.some((question) => question.id === id)));
+        }
         if (Array.isArray(progress.cheerOrder)) {
           const safeOrder = progress.cheerOrder.filter((id): id is CheerFragmentId => CHEER_CORRECT_ORDER.includes(id));
           setCheerOrder([...new Set(safeOrder)]);
@@ -415,10 +516,12 @@ export default function Home() {
       bonusRecords,
       bonusOpen,
       bonusIndex,
+      hiddenBonusRecords,
+      discoveredHiddenBonuses,
       cheerOrder,
       messageRestored,
     }));
-  }, [attempts, bonusIndex, bonusOpen, bonusRecords, cheerOrder, completion, connected, hasKey, incorrectCount, laptopStage, login, messageRestored, notes, player, progressLoaded, reflection, runId, screen, solved, startedAt, student, usedHints]);
+  }, [attempts, bonusIndex, bonusOpen, bonusRecords, cheerOrder, completion, connected, discoveredHiddenBonuses, hasKey, hiddenBonusRecords, incorrectCount, laptopStage, login, messageRestored, notes, player, progressLoaded, reflection, runId, screen, solved, startedAt, student, usedHints]);
 
   useEffect(() => {
     setShownHintLevel(null);
@@ -463,6 +566,8 @@ export default function Home() {
   const headerScoreLabel = screen === "intro" ? "START SCORE" : completion ? "확정 점수" : "예상 점수";
   const currentBonusQuestion = BONUS_QUESTIONS[bonusIndex];
   const currentBonusRecord = bonusRecords[currentBonusQuestion.id] ?? { attempts: 0, correct: false };
+  const hiddenBonusCorrectCount = HIDDEN_BONUS_QUESTIONS.filter((question) => hiddenBonusRecords[question.id]?.correct).length;
+  const currentHiddenBonus = hiddenBonusActive ? HIDDEN_BONUS_QUESTIONS.find((question) => question.id === hiddenBonusActive) ?? null : null;
   const bonusRemainingAttempts = Math.max(0, 2 - currentBonusRecord.attempts);
   const currentHintProblem: HintProblemId | null = active
     ? active === "laptop"
@@ -560,12 +665,18 @@ export default function Home() {
     setBonusAnswer("");
     setBonusFeedback("idle");
     setBonusBurst(0);
+    setHiddenBonusActive(null);
+    setHiddenBonusAnswer("");
+    setHiddenBonusFeedback("idle");
+    setHiddenBonusRecords({});
+    setDiscoveredHiddenBonuses([]);
     setAnswerFeedback(null);
     setCheerOrder([]);
     setCheerAssemblyOpen(false);
     setCheerFeedback("idle");
     setMessageRestored(false);
     setResetPending(false);
+    setEscapeConfirmPending(false);
   }
 
   function bumpAttempt(id: string) {
@@ -666,13 +777,22 @@ export default function Home() {
     }
     if (!canOpen(id)) return;
     if (id === "door" && hasKey) {
-      finalizeEscape();
-      setSolved((current) => ({ ...current, door: true }));
-      setScreen("escaped");
+      if (hiddenBonusCorrectCount < HIDDEN_BONUS_QUESTIONS.length) {
+        setEscapeConfirmPending(true);
+      } else {
+        escapeRoom();
+      }
       return;
     }
     setInput("");
     setActive(id);
+  }
+
+  function escapeRoom() {
+    finalizeEscape();
+    setSolved((current) => ({ ...current, door: true }));
+    setEscapeConfirmPending(false);
+    setScreen("escaped");
   }
 
   function updatePlayer(event: PointerEvent<HTMLDivElement>) {
@@ -826,6 +946,50 @@ export default function Home() {
     markSolved("plant", "황금 열쇠를 찾았습니다. 출구 문으로 이동하세요!");
   }
 
+  function openHiddenBonus(id: HiddenBonusId) {
+    const wasDiscovered = discoveredHiddenBonuses.includes(id);
+    if (!wasDiscovered) {
+      setDiscoveredHiddenBonuses((current) => [...current, id]);
+      setToast("🔎 숨은 보너스 문제를 발견했다!");
+    }
+    setHiddenBonusActive(id);
+    setHiddenBonusAnswer("");
+    setHiddenBonusFeedback(hiddenBonusRecords[id]?.correct ? "correct" : "idle");
+  }
+
+  function isHiddenBonusCorrect(id: HiddenBonusId, value: string) {
+    const compact = normalize(value);
+    if (id === "axis") return compact === "x=3";
+    if (id === "parabola") return compact === "포물선";
+    if (id === "x-value") return compact === "0" || compact === "영";
+    if (id === "fair-line") return compact === "대칭축";
+    if (id === "x-date") return compact === "x절편";
+    if (id === "interest") return ["바이브코딩", "웹페이지", "3학년12반"].some((answer) => compact.includes(answer));
+    if (id === "exam") return /(?:^|\D)9(?:\D|$)/.test(value) && /(?:^|\D)11(?:\D|$)/.test(value);
+    return ["수학", "ai", "gpt", "우리반"].some((answer) => compact.includes(answer));
+  }
+
+  function submitHiddenBonusAnswer(event: FormEvent) {
+    event.preventDefault();
+    if (!currentHiddenBonus || !hiddenBonusAnswer.trim()) return;
+    const previous = hiddenBonusRecords[currentHiddenBonus.id] ?? { attempts: 0, correct: false };
+    if (previous.correct) return;
+    const correct = isHiddenBonusCorrect(currentHiddenBonus.id, hiddenBonusAnswer);
+    const nextRecords = {
+      ...hiddenBonusRecords,
+      [currentHiddenBonus.id]: { attempts: previous.attempts + 1, correct },
+    };
+    setHiddenBonusRecords(nextRecords);
+    setHiddenBonusFeedback(correct ? "correct" : "wrong");
+    if (correct) {
+      setHiddenBonusAnswer("");
+      const nextCorrectCount = HIDDEN_BONUS_QUESTIONS.filter((question) => nextRecords[question.id]?.correct).length;
+      if (nextCorrectCount === HIDDEN_BONUS_QUESTIONS.length) {
+        setToast("🏆 숨겨진 보너스 문제를 모두 찾았습니다! 수학초미녀의 방을 샅샅이 뒤졌군요!");
+      }
+    }
+  }
+
   function openBonusVault() {
     setBonusOpen(true);
     const firstUnresolved = BONUS_QUESTIONS.findIndex((question) => {
@@ -905,6 +1069,8 @@ export default function Home() {
           usedHints: completion.usedHints,
           bonusScore,
           bonusRecords,
+          hiddenBonusRecords,
+          hiddenBonusCorrectCount,
           finalScore,
           rank: `${rank.grade} — ${rank.title}`,
           reflection,
@@ -1037,7 +1203,7 @@ export default function Home() {
             <div className="mission-bar">
               <div>
                 <span className="mission-kicker">LAB EXPLORATION</span>
-                <strong>탐색 기록 {solvedCount} · 응원 조각 {collectedCheerIds.length} / {CHEER_FRAGMENTS.length}</strong>
+                <strong>탐색 기록 {solvedCount} · 응원 조각 {collectedCheerIds.length} / {CHEER_FRAGMENTS.length} · 숨은 문제 {hiddenBonusCorrectCount} / 8</strong>
               </div>
               <div className="live-scoreboard" aria-label="현재 점수 상태">
                 <div><span>경과 시간</span><b data-testid="elapsed-display">{formatTime(elapsed)}</b></div>
@@ -1067,6 +1233,21 @@ export default function Home() {
                   <span className="hotspot-ring" />
                   <span className="hotspot-label">{solved[spot.id] ? "완료" : spot.label}</span>
                 </button>
+              ))}
+              {HIDDEN_BONUS_QUESTIONS.map((question) => (
+                <button
+                  type="button"
+                  key={question.id}
+                  className="hidden-bonus-object"
+                  style={{
+                    left: `${question.x}%`,
+                    top: `${question.y}%`,
+                    width: `${question.width}%`,
+                    height: `${question.height}%`,
+                  }}
+                  onClick={() => openHiddenBonus(question.id)}
+                  aria-label="방 안의 물건 조사하기"
+                />
               ))}
               <button
                 className={`player player-${student.character || "female"} ${dragging ? "player-dragging" : ""}`}
@@ -1170,6 +1351,45 @@ export default function Home() {
             <button className="reset-button" type="button" onClick={requestReset} data-testid="reset-game">게임 처음부터</button>
           </aside>
         </section>
+      )}
+
+      {screen === "playing" && currentHiddenBonus && (
+        <div className="modal-backdrop" onMouseDown={() => setHiddenBonusActive(null)}>
+          <section className="puzzle-modal hidden-bonus-modal" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="hidden-bonus-title">
+            <button className="modal-close" type="button" onClick={() => setHiddenBonusActive(null)} aria-label="닫기">×</button>
+            <span className="puzzle-eyebrow">숨은 보너스 문제</span>
+            <h3 id="hidden-bonus-title">방 안에서 발견한 수학 단서</h3>
+            {currentHiddenBonus.initials && <div className="initials-clue">힌트 · {currentHiddenBonus.initials}</div>}
+            <p className="hidden-bonus-question">{currentHiddenBonus.question}</p>
+            <form className="bonus-answer-form" onSubmit={submitHiddenBonusAnswer}>
+              <label>
+                <span>정답</span>
+                <input
+                  value={hiddenBonusAnswer}
+                  onChange={(event) => {
+                    setHiddenBonusAnswer(event.target.value);
+                    if (hiddenBonusFeedback === "wrong") setHiddenBonusFeedback("idle");
+                  }}
+                  onFocus={keepInputVisible}
+                  placeholder={hiddenBonusRecords[currentHiddenBonus.id]?.correct ? "이미 해결한 문제입니다" : "정답 입력"}
+                  disabled={hiddenBonusRecords[currentHiddenBonus.id]?.correct}
+                />
+              </label>
+              <button type="submit" className="modal-action" disabled={!hiddenBonusAnswer.trim() || hiddenBonusRecords[currentHiddenBonus.id]?.correct}>정답 확인</button>
+            </form>
+            {hiddenBonusFeedback === "correct" && (
+              <div className="bonus-feedback correct" role="status">
+                <b>{currentHiddenBonus.successMessage ?? "정답입니다! 숨은 보너스 문제를 해결했어요."}</b>
+                <span>숨은 문제 {hiddenBonusCorrectCount} / 8 완료</span>
+              </div>
+            )}
+            {hiddenBonusFeedback === "wrong" && (
+              <div className="bonus-feedback wrong" role="status">
+                <b>아직 정답이 아니에요.</b><span>다시 생각해 보세요. 오답 감점은 없습니다.</span>
+              </div>
+            )}
+          </section>
+        </div>
       )}
 
       {active && (
@@ -1295,6 +1515,20 @@ export default function Home() {
             <div className="confirm-actions">
               <button type="button" onClick={() => setResetPending(false)}>취소</button>
               <button type="button" className="confirm-use" onClick={confirmReset} data-testid="confirm-reset">초기화</button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {escapeConfirmPending && (
+        <div className="confirm-backdrop">
+          <section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="escape-confirm-title">
+            <span className="puzzle-eyebrow">EXIT CHECK</span>
+            <h3 id="escape-confirm-title">정말 방을 탈출하시겠습니까?</h3>
+            <p>아직 풀지 않은 숨은 보너스 문제가 {HIDDEN_BONUS_QUESTIONS.length - hiddenBonusCorrectCount}개 남아 있습니다.</p>
+            <div className="confirm-actions">
+              <button type="button" onClick={() => setEscapeConfirmPending(false)}>아니오</button>
+              <button type="button" className="confirm-use" onClick={escapeRoom}>네</button>
             </div>
           </section>
         </div>
