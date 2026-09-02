@@ -313,7 +313,7 @@ export default function TeacherDashboard() {
           <a href="#answers"><span>05</span>문제·정답</a>
         </nav>
         <div className="teacher-sidebar-foot">
-          <Link href="/">학생 화면 열기 ↗</Link>
+          <a href="/" target="_blank" rel="noopener noreferrer">학생 화면 열기 ↗</a>
           <button type="button" onClick={() => {
             window.sessionStorage.removeItem("math-escape-teacher-pin");
             setPin("");
