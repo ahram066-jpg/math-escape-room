@@ -14,6 +14,15 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
+  // Keep dashboard-managed runtime values (for example SUPABASE_URL) when
+  // Workers Builds creates a new version from GitHub.
+  keep_vars: true,
+  vars: {
+    RESULTS_STORAGE: "supabase",
+  },
+  secrets: {
+    required: ["SUPABASE_SECRET_KEY", "TEACHER_PIN"],
+  },
   d1_databases: d1
     ? [
         {
