@@ -1,0 +1,57 @@
+/* iPad / tablet interaction reliability fixes */
+button,
+[role="button"],
+.modal-action,
+.choice-grid button,
+.answer-dock button,
+.bonus-answer-form button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * iPad Safari can re-layout the visual viewport while the software keyboard is open.
+ * The original feedback animation faded out while that re-layout was happening,
+ * which made correct/wrong feedback appear to be missing intermittently.
+ * Keep the feedback fully visible for the whole React display window and pin it
+ * to the safe top area with a very high stacking order.
+ */
+.answer-feedback {
+  z-index: 9999 !important;
+  top: calc(env(safe-area-inset-top, 0px) + 92px) !important;
+  left: 50% !important;
+  transform: translate3d(-50%, 0, 0) !important;
+  animation: none !important;
+  opacity: 1 !important;
+  min-width: 220px;
+  max-width: calc(100vw - 28px);
+  min-height: 58px;
+  padding: 16px 24px !important;
+  font-size: 18px;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, .62), 0 0 0 1px rgba(255, 255, 255, .05) inset !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  will-change: transform, opacity;
+}
+
+.answer-feedback strong {
+  font-size: 18px !important;
+  white-space: nowrap;
+}
+
+.answer-feedback span {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 1100px), (pointer: coarse) {
+  .modal-action,
+  .answer-dock button,
+  .choice-grid button,
+  .bonus-answer-form button {
+    min-height: 48px;
+  }
+
+  .answer-feedback {
+    top: calc(env(safe-area-inset-top, 0px) + 82px) !important;
+  }
+}
