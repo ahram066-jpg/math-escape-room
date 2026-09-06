@@ -55,3 +55,88 @@ button,
     top: calc(env(safe-area-inset-top, 0px) + 82px) !important;
   }
 }
+
+/*
+ * On iPad-sized portrait layouts the base stylesheet stacks the side panel below
+ * the room and makes the puzzle backdrop full-screen. While a puzzle is open,
+ * turn the clue vault into a compact fixed reference panel so students can read
+ * collected clues without closing the problem.
+ */
+@media (min-width: 721px) and (max-width: 980px) {
+  .site-main:has(.modal-backdrop .puzzle-modal) .modal-backdrop {
+    inset: 76px 270px 0 0 !important;
+    padding: 12px !important;
+    place-items: center;
+  }
+
+  .site-main:has(.modal-backdrop .puzzle-modal) .puzzle-modal {
+    width: min(620px, 100%);
+    max-height: calc(100dvh - 100px);
+    padding: clamp(22px, 4vw, 36px);
+  }
+
+  .site-main:has(.modal-backdrop .puzzle-modal) .side-panel {
+    position: fixed !important;
+    z-index: 170 !important;
+    top: 76px;
+    right: 0;
+    bottom: 0;
+    width: 270px;
+    display: block !important;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 14px;
+    border-top: 0 !important;
+    border-left: 1px solid var(--line) !important;
+    background: rgba(12, 8, 17, .98);
+    box-shadow: -18px 0 48px rgba(0, 0, 0, .32);
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+  }
+
+  .site-main:has(.modal-backdrop .puzzle-modal) .side-panel > *:not(.clue-vault) {
+    display: none !important;
+  }
+
+  .site-main:has(.modal-backdrop .puzzle-modal) .clue-vault {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .site-main:has(.modal-backdrop .puzzle-modal) .clue-vault .panel-heading {
+    position: sticky;
+    top: -14px;
+    z-index: 2;
+    margin: 0 -14px 10px;
+    padding: 14px;
+    background: rgba(12, 8, 17, .98);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .site-main:has(.modal-backdrop .puzzle-modal) .clue-vault .clue {
+    padding: 10px 9px;
+  }
+
+  .site-main:has(.modal-backdrop .puzzle-modal) .cheer-clue-section {
+    margin-top: 12px;
+  }
+}
+
+/* A little more room for the problem on narrower iPad mini class screens. */
+@media (min-width: 721px) and (max-width: 800px) {
+  .site-main:has(.modal-backdrop .puzzle-modal) .modal-backdrop {
+    inset-right: 245px !important;
+  }
+
+  .site-main:has(.modal-backdrop .puzzle-modal) .side-panel {
+    width: 245px;
+    padding: 12px;
+  }
+
+  .site-main:has(.modal-backdrop .puzzle-modal) .clue-vault .panel-heading {
+    top: -12px;
+    margin-inline: -12px;
+    padding: 12px;
+  }
+}
