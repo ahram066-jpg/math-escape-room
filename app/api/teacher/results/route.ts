@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
   try {
     const response = await fetch(
-      `${supabaseUrl}/rest/v1/escape_results?select=*&order=created_at.desc&limit=1000`,
+      `${supabaseUrl}/rest/v1/escape_results?select=*&rank=neq.__ACTIVE__&order=created_at.desc&limit=1000`,
       {
         headers: {
           apikey: secretKey,
