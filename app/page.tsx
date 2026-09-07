@@ -180,7 +180,7 @@ const HIDDEN_BONUS_QUESTIONS: HiddenBonusQuestion[] = [
   {
     id: "fair-line",
     question: "포물선에서 양쪽을 항상 똑같이 대하는 세상에서 가장 공평한 선은?",
-    answerLabel: "대칭축",
+    answerLabel: "대칭축 또는 축",
     x: 84.5,
     y: 52,
     width: 6,
@@ -1018,7 +1018,7 @@ export default function Home() {
     if (id === "axis") return compact === "x=3";
     if (id === "parabola") return compact === "포물선";
     if (id === "x-value") return compact === "0" || compact === "영";
-    if (id === "fair-line") return compact === "대칭축";
+    if (id === "fair-line") return compact === "대칭축" || compact === "축";
     if (id === "x-date") return compact === "x절편";
     if (id === "interest") return ["바이브코딩", "웹페이지", "3학년12반"].some((answer) => compact.includes(answer));
     if (id === "exam") return /(?:^|\D)9(?:\D|$)/.test(value) && /(?:^|\D)11(?:\D|$)/.test(value);
