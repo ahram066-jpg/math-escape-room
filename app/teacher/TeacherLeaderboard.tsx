@@ -52,17 +52,8 @@ function honorScore(row: ResultRow) {
   return row.final_score + optionalCorrectCount(row) * HONOR_POINTS_PER_OPTIONAL;
 }
 
-function isBetterRecord(next: ResultRow, current: ResultRow) {
-  const nextSolved = optionalCorrectCount(next);
-  const currentSolved = optionalCorrectCount(current);
-  if (nextSolved !== currentSolved) return nextSolved > currentSolved;
-
-  const nextHonorScore = honorScore(next);
-  const currentHonorScore = honorScore(current);
-  if (nextHonorScore !== currentHonorScore) return nextHonorScore > currentHonorScore;
-
-  if (next.elapsed_seconds !== current.elapsed_seconds) return next.elapsed_seconds < current.elapsed_seconds;
-  return new Date(next.completed_at ?? next.created_at).getTime() > new Date(current.completed_at ?? current.created_at).getTime();
+function submissionTime(row: ResultRow) {
+  return new Date(row.completed_at ?? row.created_at).getTime();
 }
 
 export default function TeacherLeaderboard() {
@@ -130,17 +121,19 @@ export default function TeacherLeaderboard() {
 
   const ranking = useMemo(() => {
     if (!selectedClass) return [];
-    const bestByStudent = new Map<string, ResultRow>();
+    const firstSubmissionByStudent = new Map<string, ResultRow>();
 
     results
       .filter((row) => row.class_name === selectedClass)
       .forEach((row) => {
         const key = `${row.class_name}::${row.student_number}::${row.student_name.trim()}`;
-        const current = bestByStudent.get(key);
-        if (!current || isBetterRecord(row, current)) bestByStudent.set(key, row);
+        const current = firstSubmissionByStudent.get(key);
+        if (!current || submissionTime(row) < submissionTime(current)) {
+          firstSubmissionByStudent.set(key, row);
+        }
       });
 
-    return [...bestByStudent.values()]
+    return [...firstSubmissionByStudent.values()]
       .sort((left, right) => {
         const solvedDifference = optionalCorrectCount(right) - optionalCorrectCount(left);
         if (solvedDifference) return solvedDifference;
@@ -178,7 +171,7 @@ export default function TeacherLeaderboard() {
             <div className={styles.heading}>
               <span>CLASS HALL OF FAME</span>
               <h2 id="teacher-leaderboard-title">학급 명예의 전당</h2>
-              <p>많이 해결한 학생을 가장 먼저 평가합니다. 해결 수가 같으면 명예 점수, 그마저 같으면 탈출 시간이 빠른 학생이 먼저 표시됩니다.</p>
+              <p>학생별 첫 제출 완료 기록만 사용합니다. 많이 해결한 학생을 먼저 평가하고, 해결 수가 같으면 명예 점수, 그마저 같으면 탈출 시간이 빠른 학생이 먼저 표시됩니다.</p>
             </div>
 
             <div className={styles.controls}>
@@ -209,7 +202,7 @@ export default function TeacherLeaderboard() {
                     <div className={styles.rank} aria-label={`${rank}위`}>{rank <= 3 ? ["🥇", "🥈", "🥉"][rank - 1] : rank}</div>
                     <div className={styles.student}>
                       <b>{row.student_number}번 {row.student_name}</b>
-                      <span>{row.class_name}반 · 기존 점수 {row.final_score.toLocaleString()}점</span>
+                      <span>{row.class_name}반 · 첫 제출 점수 {row.final_score.toLocaleString()}점</span>
                     </div>
                     <div className={styles.stat}>
                       <span>선택문제 해결</span>
@@ -230,7 +223,7 @@ export default function TeacherLeaderboard() {
               {!loading && !ranking.length && <div className={styles.empty}>선택한 학급의 제출 기록이 아직 없습니다.</div>}
             </div>
 
-            <p className={styles.note}>순위 기준: 선택문제 해결 수 → 명예 점수 → 탈출 시간. 명예 점수는 기존 최종점수에 선택문제 정답 1개당 100점을 더합니다. 같은 학생이 여러 번 제출한 경우에도 이 기준으로 가장 좋은 기록 1개만 반영합니다.</p>
+            <p className={styles.note}>랭킹에는 학생별 가장 먼저 제출 완료한 1회 기록만 반영합니다. 두 번째 이후 재도전 기록은 순위에서 제외됩니다. 순위 기준은 선택문제 해결 수 → 명예 점수 → 탈출 시간입니다.</p>
           </section>
         </div>
       )}
