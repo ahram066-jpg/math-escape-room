@@ -126,7 +126,7 @@ export default function TeacherLeaderboard() {
     results
       .filter((row) => row.class_name === selectedClass)
       .forEach((row) => {
-        const key = `${row.class_name}::${row.student_number}::${row.student_name.trim()}`;
+        const key = `${row.class_name}::${row.student_number}`;
         const current = firstSubmissionByStudent.get(key);
         if (!current || submissionTime(row) < submissionTime(current)) {
           firstSubmissionByStudent.set(key, row);
@@ -223,7 +223,7 @@ export default function TeacherLeaderboard() {
               {!loading && !ranking.length && <div className={styles.empty}>선택한 학급의 제출 기록이 아직 없습니다.</div>}
             </div>
 
-            <p className={styles.note}>랭킹에는 학생별 가장 먼저 제출 완료한 1회 기록만 반영합니다. 두 번째 이후 재도전 기록은 순위에서 제외됩니다. 순위 기준은 선택문제 해결 수 → 명예 점수 → 탈출 시간입니다.</p>
+            <p className={styles.note}>랭킹에는 같은 반·번호 학생의 가장 먼저 제출 완료한 1회 기록만 반영합니다. 두 번째 이후 재도전 기록은 순위에서 제외됩니다. 순위 기준은 선택문제 해결 수 → 명예 점수 → 탈출 시간입니다.</p>
           </section>
         </div>
       )}
