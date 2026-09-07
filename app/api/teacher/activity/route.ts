@@ -2,6 +2,7 @@ import { authorizeTeacher, teacherRuntimeValue } from "../server";
 
 const ACTIVE_RANK = "__ACTIVE__";
 const STALE_AFTER_MS = 3 * 60 * 1000;
+const ACTIVITY_WINDOW_MS = 12 * 60 * 60 * 1000;
 
 type ActivityRow = {
   class_name: string;
@@ -34,8 +35,9 @@ export async function GET(request: Request) {
   }
 
   try {
+    const windowStart = new Date(Date.now() - ACTIVITY_WINDOW_MS).toISOString();
     const response = await fetch(
-      `${supabaseUrl}/rest/v1/escape_results?select=class_name,student_number,student_name,rank,completed_at,created_at&order=created_at.asc&limit=2000`,
+      `${supabaseUrl}/rest/v1/escape_results?select=class_name,student_number,student_name,rank,completed_at,created_at&created_at=gte.${encodeURIComponent(windowStart)}&order=created_at.asc&limit=2000`,
       {
         headers: {
           apikey: secretKey,
@@ -99,6 +101,7 @@ export async function GET(request: Request) {
       {
         students,
         staleAfterSeconds: STALE_AFTER_MS / 1000,
+        activityWindowHours: ACTIVITY_WINDOW_MS / 60 / 60 / 1000,
         updatedAt: new Date().toISOString(),
       },
       { headers: { "Cache-Control": "no-store" } },
