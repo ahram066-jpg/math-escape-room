@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import StudentActivityTracker from "./StudentActivityTracker";
 import "./globals.css";
 import "./ipad-feedback-fix.css";
+import "./intro-highlight.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
