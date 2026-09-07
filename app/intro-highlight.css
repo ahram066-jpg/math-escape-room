@@ -1,0 +1,82 @@
+/* Intro title emphasis: aurora + pearl glow */
+.intro-card h1 em {
+  position: relative;
+  display: inline-block;
+  color: transparent !important;
+  background:
+    linear-gradient(
+      105deg,
+      #fffdf7 0%,
+      #f7e7ff 13%,
+      #bff7ff 28%,
+      #f8d7ff 43%,
+      #fff3c9 58%,
+      #d8d1ff 72%,
+      #baf7ef 86%,
+      #fffdf7 100%
+    );
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: .7px rgba(255,255,255,.5) !important;
+  text-shadow:
+    0 0 8px rgba(255,255,255,.72),
+    0 0 22px rgba(167,122,255,.52),
+    0 0 42px rgba(84,221,237,.34),
+    0 0 64px rgba(240,91,182,.24) !important;
+  filter: drop-shadow(0 0 10px rgba(255,255,255,.18));
+  animation: introAuroraPearl 5.5s ease-in-out infinite;
+  isolation: isolate;
+}
+
+.intro-card h1 em::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -16% -7% -20%;
+  border-radius: 48%;
+  background:
+    radial-gradient(circle at 18% 34%, rgba(255,255,255,.34), transparent 14%),
+    radial-gradient(circle at 72% 22%, rgba(193,247,255,.26), transparent 18%),
+    radial-gradient(circle at 55% 78%, rgba(247,190,255,.2), transparent 22%);
+  filter: blur(14px);
+  opacity: .78;
+  pointer-events: none;
+}
+
+.intro-meta span:last-child {
+  font-size: 0;
+  color: #cbbfd2;
+}
+
+.intro-meta span:last-child::after {
+  content: "⌁ 총 7개의 메인 미션 + 8개의 보너스 미션";
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  color: #ded2e6;
+  text-shadow: 0 0 16px rgba(174,78,232,.22);
+}
+
+@keyframes introAuroraPearl {
+  0%, 100% { background-position: 0% 50%; filter: drop-shadow(0 0 9px rgba(255,255,255,.16)); }
+  50% { background-position: 100% 50%; filter: drop-shadow(0 0 15px rgba(174,222,255,.28)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-card h1 em { animation: none; background-position: 48% 50%; }
+}
+
+@media (max-width: 720px) {
+  .intro-card h1 em {
+    text-shadow:
+      0 0 7px rgba(255,255,255,.66),
+      0 0 18px rgba(167,122,255,.45),
+      0 0 30px rgba(84,221,237,.26) !important;
+  }
+
+  .intro-meta span:last-child::after {
+    font-size: 11px;
+  }
+}
