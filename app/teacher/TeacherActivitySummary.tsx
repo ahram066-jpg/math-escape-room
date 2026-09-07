@@ -123,7 +123,7 @@ export default function TeacherActivitySummary() {
         <div>
           <span>LIVE PARTICIPATION</span>
           <h2>실시간 참여 현황</h2>
-          <p>학생별 1명 기준으로 구분합니다. 3분 이상 활동 신호가 없고 제출 기록도 없으면 중단·튕김으로 추정합니다.</p>
+          <p>최근 12시간 참여 기록을 학생별 1명 기준으로 구분합니다. 3분 이상 활동 신호가 없고 제출 기록도 없으면 중단·튕김으로 추정합니다.</p>
         </div>
         <div className={styles.actions}>
           <label>
