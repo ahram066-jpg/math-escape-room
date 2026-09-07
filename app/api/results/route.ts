@@ -272,7 +272,7 @@ export async function POST(request: Request) {
       rank,
       reflection,
       startedAt: payload.startedAt ?? null,
-      completedAt: payload.completedAt ?? null,
+      completedAt: new Date().toISOString(),
       messageRestored: payload.messageRestored === true,
     };
 
