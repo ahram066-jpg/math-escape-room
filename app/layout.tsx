@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { headers } from "next/headers";
+import StudentActivityTracker from "./StudentActivityTracker";
 import "./globals.css";
 import "./ipad-feedback-fix.css";
 
@@ -25,6 +26,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="ko">
     <head><meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" /></head>
-    <body className={`${geistSans.variable} ${geistMono.variable}`}>{children}</body>
+    <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <StudentActivityTracker />
+      {children}
+    </body>
   </html>;
 }
