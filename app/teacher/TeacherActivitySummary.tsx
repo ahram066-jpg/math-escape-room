@@ -42,22 +42,6 @@ export default function TeacherActivitySummary() {
   }, []);
 
   useEffect(() => {
-    const workspace = document.querySelector<HTMLElement>(".teacher-workspace");
-    const header = workspace?.querySelector<HTMLElement>(".teacher-header");
-    if (!workspace || !header) return;
-
-    const host = document.createElement("div");
-    host.dataset.teacherActivitySummary = "true";
-    header.insertAdjacentElement("afterend", host);
-    setTarget(host);
-
-    return () => {
-      setTarget(null);
-      host.remove();
-    };
-  }, []);
-
-  useEffect(() => {
     const syncPin = () => {
       const savedPin = window.sessionStorage.getItem("math-escape-teacher-pin") ?? "";
       if (savedPin !== pin) {
@@ -71,6 +55,43 @@ export default function TeacherActivitySummary() {
     const timer = window.setInterval(syncPin, 700);
     return () => window.clearInterval(timer);
   }, [loadActivity, pin]);
+
+  useEffect(() => {
+    if (!pin) {
+      setTarget(null);
+      return;
+    }
+
+    let host: HTMLDivElement | null = null;
+    const attach = () => {
+      if (host) return true;
+      const workspace = document.querySelector<HTMLElement>(".teacher-workspace");
+      const header = workspace?.querySelector<HTMLElement>(".teacher-header");
+      if (!workspace || !header) return false;
+
+      host = document.createElement("div");
+      host.dataset.teacherActivitySummary = "true";
+      header.insertAdjacentElement("afterend", host);
+      setTarget(host);
+      return true;
+    };
+
+    if (!attach()) {
+      const timer = window.setInterval(() => {
+        if (attach()) window.clearInterval(timer);
+      }, 250);
+      return () => {
+        window.clearInterval(timer);
+        setTarget(null);
+        host?.remove();
+      };
+    }
+
+    return () => {
+      setTarget(null);
+      host?.remove();
+    };
+  }, [pin]);
 
   useEffect(() => {
     if (!pin) return;
