@@ -53,7 +53,7 @@ export async function GET(request: Request) {
     const byStudent = new Map<string, StudentState>();
 
     rows.forEach((row) => {
-      const key = `${row.class_name}::${row.student_number}::${row.student_name.trim()}`;
+      const key = `${row.class_name}::${row.student_number}`;
       const current = byStudent.get(key) ?? {
         className: row.class_name,
         studentNumber: row.student_number,
@@ -62,6 +62,7 @@ export async function GET(request: Request) {
         lastSeenAt: null,
       };
 
+      current.studentName = row.student_name || current.studentName;
       if (row.rank && row.rank !== ACTIVE_RANK) {
         current.hasCompleted = true;
       } else if (row.rank === ACTIVE_RANK) {
