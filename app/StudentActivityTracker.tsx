@@ -4,6 +4,8 @@ import { useEffect } from "react";
 
 const PROGRESS_KEY = "math-lab-hints-v1";
 const TOTAL_TIME = 40 * 60;
+const HEARTBEAT_MS = 30_000;
+const CHECK_MS = 2_000;
 
 type StoredProgress = {
   screen?: "intro" | "playing" | "escaped";
@@ -25,8 +27,10 @@ function readProgress(): StoredProgress | null {
 export default function StudentActivityTracker() {
   useEffect(() => {
     let stopped = false;
+    let lastRunId = "";
+    let lastSentAt = 0;
 
-    async function sendHeartbeat() {
+    async function sendHeartbeat(force = false) {
       if (stopped || window.location.pathname.startsWith("/teacher")) return;
       const progress = readProgress();
       if (!progress || progress.screen === "intro") return;
@@ -37,8 +41,14 @@ export default function StudentActivityTracker() {
       const runId = progress.runId?.trim() ?? "";
       if (!className || !number || !name || !runId) return;
 
+      const now = Date.now();
+      const isNewRun = runId !== lastRunId;
+      if (!force && !isNewRun && now - lastSentAt < HEARTBEAT_MS) return;
+
+      lastRunId = runId;
+      lastSentAt = now;
       const elapsedSeconds = progress.startedAt
-        ? Math.max(0, Math.floor((Date.now() - progress.startedAt) / 1000))
+        ? Math.max(0, Math.floor((now - progress.startedAt) / 1000))
         : 0;
 
       try {
@@ -62,11 +72,11 @@ export default function StudentActivityTracker() {
       }
     }
 
-    void sendHeartbeat();
-    const timer = window.setInterval(() => void sendHeartbeat(), 30_000);
-    const onFocus = () => void sendHeartbeat();
+    void sendHeartbeat(true);
+    const timer = window.setInterval(() => void sendHeartbeat(), CHECK_MS);
+    const onFocus = () => void sendHeartbeat(true);
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") void sendHeartbeat();
+      if (document.visibilityState === "visible") void sendHeartbeat(true);
     };
 
     window.addEventListener("focus", onFocus);
