@@ -126,7 +126,7 @@ button,
 /* A little more room for the problem on narrower iPad mini class screens. */
 @media (min-width: 721px) and (max-width: 800px) {
   .site-main:has(.modal-backdrop .puzzle-modal) .modal-backdrop {
-    inset-right: 245px !important;
+    right: 245px !important;
   }
 
   .site-main:has(.modal-backdrop .puzzle-modal) .side-panel {
