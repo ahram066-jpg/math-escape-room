@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import styles from "./TeacherLeaderboard.module.css";
 
+type BonusRecord = { attempts?: number; correct?: boolean };
+type BonusMap = Record<string, BonusRecord>;
+
 type ResultRow = {
   id: number | string;
   class_name: string;
@@ -10,17 +13,54 @@ type ResultRow = {
   student_name: string;
   elapsed_seconds: number;
   final_score: number;
+  bonus_json: BonusMap | string | null;
   completed_at: string | null;
   created_at: string;
 };
+
+const BONUS_IDS = ["chord", "tangent", "right-angle", "mean", "similarity", "trig-ratio"] as const;
+const HIDDEN_BONUS_IDS = ["axis", "parabola", "x-value", "fair-line", "x-date", "interest", "exam", "favorites"] as const;
+const OPTIONAL_TOTAL = BONUS_IDS.length + HIDDEN_BONUS_IDS.length;
+const HONOR_POINTS_PER_OPTIONAL = 100;
 
 function formatDuration(totalSeconds: number) {
   const seconds = Math.max(0, Math.floor(totalSeconds || 0));
   return `${Math.floor(seconds / 60)}분 ${String(seconds % 60).padStart(2, "0")}초`;
 }
 
+function asBonusMap(value: BonusMap | string | null | undefined): BonusMap {
+  if (value && typeof value === "object") return value;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === "object") return parsed as BonusMap;
+    } catch {
+      // Ignore malformed legacy records.
+    }
+  }
+  return {};
+}
+
+function optionalCorrectCount(row: ResultRow) {
+  const bonuses = asBonusMap(row.bonus_json);
+  const vaultCorrect = BONUS_IDS.filter((id) => bonuses[id]?.correct === true).length;
+  const hiddenCorrect = HIDDEN_BONUS_IDS.filter((id) => bonuses[`hidden:${id}`]?.correct === true).length;
+  return vaultCorrect + hiddenCorrect;
+}
+
+function honorScore(row: ResultRow) {
+  return row.final_score + optionalCorrectCount(row) * HONOR_POINTS_PER_OPTIONAL;
+}
+
 function isBetterRecord(next: ResultRow, current: ResultRow) {
-  if (next.final_score !== current.final_score) return next.final_score > current.final_score;
+  const nextSolved = optionalCorrectCount(next);
+  const currentSolved = optionalCorrectCount(current);
+  if (nextSolved !== currentSolved) return nextSolved > currentSolved;
+
+  const nextHonorScore = honorScore(next);
+  const currentHonorScore = honorScore(current);
+  if (nextHonorScore !== currentHonorScore) return nextHonorScore > currentHonorScore;
+
   if (next.elapsed_seconds !== current.elapsed_seconds) return next.elapsed_seconds < current.elapsed_seconds;
   return new Date(next.completed_at ?? next.created_at).getTime() > new Date(current.completed_at ?? current.created_at).getTime();
 }
@@ -102,7 +142,12 @@ export default function TeacherLeaderboard() {
 
     return [...bestByStudent.values()]
       .sort((left, right) => {
-        if (right.final_score !== left.final_score) return right.final_score - left.final_score;
+        const solvedDifference = optionalCorrectCount(right) - optionalCorrectCount(left);
+        if (solvedDifference) return solvedDifference;
+
+        const scoreDifference = honorScore(right) - honorScore(left);
+        if (scoreDifference) return scoreDifference;
+
         if (left.elapsed_seconds !== right.elapsed_seconds) return left.elapsed_seconds - right.elapsed_seconds;
         return left.student_number.localeCompare(right.student_number, "ko", { numeric: true });
       })
@@ -133,7 +178,7 @@ export default function TeacherLeaderboard() {
             <div className={styles.heading}>
               <span>CLASS HALL OF FAME</span>
               <h2 id="teacher-leaderboard-title">학급 명예의 전당</h2>
-              <p>최종 점수가 높은 순으로 정렬하고, 동점이면 탈출 시간이 빠른 학생이 먼저 표시됩니다.</p>
+              <p>많이 해결한 학생을 가장 먼저 평가합니다. 해결 수가 같으면 명예 점수, 그마저 같으면 탈출 시간이 빠른 학생이 먼저 표시됩니다.</p>
             </div>
 
             <div className={styles.controls}>
@@ -157,16 +202,22 @@ export default function TeacherLeaderboard() {
             <div className={styles.list}>
               {ranking.map((row, index) => {
                 const rank = index + 1;
+                const solved = optionalCorrectCount(row);
+                const weightedScore = honorScore(row);
                 return (
                   <article className={`${styles.row} ${rank <= 3 ? styles.podium : ""}`} key={`${row.id}-${rank}`}>
                     <div className={styles.rank} aria-label={`${rank}위`}>{rank <= 3 ? ["🥇", "🥈", "🥉"][rank - 1] : rank}</div>
                     <div className={styles.student}>
                       <b>{row.student_number}번 {row.student_name}</b>
-                      <span>{row.class_name}반</span>
+                      <span>{row.class_name}반 · 기존 점수 {row.final_score.toLocaleString()}점</span>
                     </div>
                     <div className={styles.stat}>
-                      <span>최종 점수</span>
-                      <strong>{row.final_score.toLocaleString()}점</strong>
+                      <span>선택문제 해결</span>
+                      <strong>{solved} / {OPTIONAL_TOTAL}</strong>
+                    </div>
+                    <div className={styles.stat}>
+                      <span>명예 점수</span>
+                      <strong>{weightedScore.toLocaleString()}점</strong>
                     </div>
                     <div className={styles.stat}>
                       <span>탈출 시간</span>
@@ -179,7 +230,7 @@ export default function TeacherLeaderboard() {
               {!loading && !ranking.length && <div className={styles.empty}>선택한 학급의 제출 기록이 아직 없습니다.</div>}
             </div>
 
-            <p className={styles.note}>같은 학생이 여러 번 제출한 경우에는 최고 점수 기록 1개만 순위에 반영됩니다.</p>
+            <p className={styles.note}>순위 기준: 선택문제 해결 수 → 명예 점수 → 탈출 시간. 명예 점수는 기존 최종점수에 선택문제 정답 1개당 100점을 더합니다. 같은 학생이 여러 번 제출한 경우에도 이 기준으로 가장 좋은 기록 1개만 반영합니다.</p>
           </section>
         </div>
       )}
